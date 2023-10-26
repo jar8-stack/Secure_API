@@ -9,10 +9,15 @@ const metodosCifradoController = require('../controllers/metodosCifradoControlle
 
 // Rutas para Usuarios
 router.post('/usuarios', usuariosController.registrarUsuario);
+router.post('/login', usuariosController.iniciarSesion);
 router.post('/google', usuariosController.registrarUsuarioConGoogle);
+/// router.post('/loginFacial', usuariosController.registrarUsuarioConGoogle);
 
 // Rutas para Documentos
 router.post('/documentos', documentosController.crearDocumento);
+router.get('/obtener_documentos', documentosController.obtenerDocumentos);
+router.post('/encriptar', documentosController.encriptarDocumento);
+router.post('/desencriptar', documentosController.desencriptarDocumento);
 
 // Rutas para Registros de Acceso
 router.post('/registros-acceso', registrosAccesoController.registrarAcceso);
