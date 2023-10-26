@@ -8,7 +8,8 @@ const configuracionSeguridadController = require('../controllers/configuracionSe
 const metodosCifradoController = require('../controllers/metodosCifradoController');
 
 // Rutas para Usuarios
-router.post('/usuarios', usuariosController.crearUsuario);
+router.post('/usuarios', usuariosController.registrarUsuario);
+router.post('/google', usuariosController.registrarUsuarioConGoogle);
 
 // Rutas para Documentos
 router.post('/documentos', documentosController.crearDocumento);
