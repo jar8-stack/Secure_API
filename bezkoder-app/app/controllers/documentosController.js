@@ -9,7 +9,18 @@ const upload = multer({ storage });
 
 exports.crearDocumento = async (req, res) => {
   try {
-    const nuevoDocumento = await Documento.create(req.body);
+    // Obtener el ID del usuario desde el token JWT
+    const token = req.headers.authorization;        
+    const decoded = jwt.verify(token, process.env.SECRET);// Asegúrate de tener la clave secreta correcta        
+    const usuarioId = decoded.id;
+    console.log("Token decodificado: "+usuarioId)
+
+    // Crear el nuevo documento asociado al usuario
+    const nuevoDocumento = await Documento.create({
+      ...req.body,
+      PropietarioID: usuarioId,
+    });
+
     res.json(nuevoDocumento);
   } catch (error) {
     console.error(error);
@@ -30,7 +41,7 @@ exports.obtenerDocumentos = async (req, res) => {
     try {      
 
       // Verifica y decodifica el token JWT
-    const decoded = jwt.verify(token, 'secreto'); // Reemplaza 'secreto' con tu clave secreta JWT      
+    const decoded = jwt.verify(token, process.env.SECRET); // Reemplaza 'secreto' con tu clave secreta JWT      
     console.log(decoded)
 
     // Ahora, puedes usar "decoded" para obtener información del usuario, como su ID o correo electrónico
@@ -54,25 +65,33 @@ exports.obtenerDocumentos = async (req, res) => {
 };
 
 
-// Controlador para encriptar y guardar un documento
 exports.encriptarDocumento = async (req, res) => {
   try {
-    const { documento, claveDeEncriptacion, PropietarioID, FechaCarga } = req.body;
+    const { nombre_documento, documento, claveDeEncriptacion, FechaCarga } = req.body;
 
     if (!documento || !claveDeEncriptacion) {
       return res.status(400).json({ mensaje: 'No se proporcionó un archivo o una clave de encriptación' });
     }
 
+    // Obtener el ID del usuario desde el token JWT
+    const token = req.headers.authorization;        
+    const decoded = jwt.verify(token, process.env.SECRET);// Asegúrate de tener la clave secreta correcta        
+    const PropietarioID = decoded.id;
+
     // Encripta el archivo utilizando la clave proporcionada
-    const encryptedData = crypto.createHmac('sha256', claveDeEncriptacion).update(documento).digest('hex');
+    const cipher = crypto.createCipher('aes-256-cbc', claveDeEncriptacion);
+    let encryptedData = cipher.update(documento, 'utf8', 'hex');
+    encryptedData += cipher.final('hex');
+    
 
     // Guarda el archivo en la base de datos
     const nuevoDocumento = await Documento.create({
-      NombreDocumento: 'nombre_archivo', // Puedes proporcionar un nombre si es relevante
-      TipoDocumento: 'application/pdf', // Puedes proporcionar un tipo MIME adecuado
+      NombreDocumento: nombre_documento, // Puedes proporcionar un nombre si es relevante
+      TipoDocumento: 'DLSE', // Puedes proporcionar un tipo MIME adecuado
       DatosDocumento: encryptedData,
       FechaCarga: FechaCarga || new Date(), // Puedes usar la fecha proporcionada o la fecha actual
       PropietarioID: PropietarioID || 0, // Puedes usar el PropietarioID proporcionado o un valor predeterminado
+      ClaveDeEncriptacion: claveDeEncriptacion, // Almacena la clave utilizada para futura desencriptación
     });
 
     res.json(nuevoDocumento);
@@ -88,20 +107,24 @@ exports.desencriptarDocumento = async (req, res) => {
     const { documentoId, claveDeEncriptacion } = req.body;
 
     if (!documentoId || !claveDeEncriptacion) {
-      return res.status(400).json({ mensaje: 'No se proporcionó un ID de documento o una clave de desencriptación' });
+      return res.status(400).json({ mensaje: 'No se proporcionaron datos encriptados o una clave de desencriptación' });
     }
 
     // Obtén el documento encriptado de la base de datos por su ID
     const documentoEncriptado = await Documento.findByPk(documentoId);
 
-    if (!documentoEncriptado) {
-      return res.status(404).json({ mensaje: 'Documento encriptado no encontrado' });
-    }
+    // Supongamos que documentoEncriptado.DatosDocumento es un búfer
+    const datosEnBytes = documentoEncriptado.DatosDocumento;
+    const datosEnString = datosEnBytes.toString('utf8');
 
-    // Desencripta el archivo utilizando la misma clave utilizada para la encriptación
-    const decryptedData = crypto.createHmac('sha256', claveDeEncriptacion).update(documentoEncriptado.DatosDocumento).digest('hex');
+    console.log(datosEnString)
 
-    // Puedes hacer lo que desees con los datos desencriptados, como guardarlos en un archivo o enviarlos como respuesta
+    // Desencripta los datos utilizando la clave proporcionada
+    const decipher = crypto.createDecipher('aes-256-cbc', claveDeEncriptacion);
+    let decryptedData = decipher.update(datosEnString, 'hex', 'utf8');
+    decryptedData += decipher.final('utf8');
+
+    // Puedes hacer lo que desees con los datos desencriptados, como enviarlos como respuesta
     res.json({ datosDesencriptados: decryptedData });
   } catch (error) {
     console.error(error);

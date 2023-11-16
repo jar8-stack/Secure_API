@@ -42,7 +42,7 @@ exports.registrarUsuario = async (req, res) => {
 
       const token = jwt.sign(
         { id: nuevoUsuario.id, correoElectronico: nuevoUsuario.CorreoElectronico },
-        'secreto',
+        process.env.SECRET,
         { expiresIn: '1h' }
       );
 
@@ -74,7 +74,7 @@ exports.iniciarSesion = async (req, res) => {
 
     const token = jwt.sign(
       { id: usuario.id, correoElectronico: usuario.CorreoElectronico },
-      'secreto',
+      process.env.SECRET,
       { expiresIn: '1h' }
     );
 
@@ -113,8 +113,13 @@ exports.registrarUsuarioConGoogle = async (req, res) => {
         // Otros campos según el modelo
       });
 
-      // Puedes realizar más acciones, como almacenar la foto del perfil en tu servidor o proporcionar un token de sesión
-      res.status(201).json({ mensaje: 'Registro exitoso con Google' });
+      const token = jwt.sign(
+        { id: nuevoUsuario.id, correoElectronico: nuevoUsuario.CorreoElectronico },
+        process.env.SECRET,
+        { expiresIn: '1h' }
+      );
+
+      res.status(201).json({ token, mensaje: 'Registro exitoso con google' });
     }
   } catch (error) {
     console.error(error);
