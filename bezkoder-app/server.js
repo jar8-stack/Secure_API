@@ -7,8 +7,8 @@ const apiRoutes = require('./app/routes/api');
 const app = express();
 
 // Ajustar el límite de tamaño de solicitud
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '4.95gb' }));
+app.use(express.urlencoded({ limit: '4.95gb', extended: true }));
 
 const port = process.env.PORT_API || 8080;
 
