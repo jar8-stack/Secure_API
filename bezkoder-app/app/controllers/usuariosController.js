@@ -1,7 +1,7 @@
 const Usuario = require('../models/Usuario');
 const admin = require('firebase-admin');
-const serviceAccount = require('../config/fir-74b7e-firebase-adminsdk-wq6vo-7eaab986da.json'); 
-const firebaseConfig  = require('../config/firebaseConfig');
+const serviceAccount = require('../config/fir-74b7e-firebase-adminsdk-wq6vo-7eaab986da.json');
+const firebaseConfig = require('../config/firebaseConfig');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 //const cv = require('opencv4nodejs');
@@ -23,7 +23,7 @@ exports.crearUsuario = async (req, res) => {
 
 exports.registrarUsuario = async (req, res) => {
   try {
-    const { tipoRegistro, correo, contrasena, nombreCompleto, fechaNacimiento, genero, telefono, nombreUsuario } = req.body;
+    const { tipoRegistro, correo, contrasena, nombreCompleto, fechaNacimiento, genero, telefono, nombreUsuario, googleUserId } = req.body;
 
     if (tipoRegistro === 'normal') {
       // Encriptar la contraseña antes de guardarla en la base de datos
@@ -47,7 +47,31 @@ exports.registrarUsuario = async (req, res) => {
       );
 
       res.status(201).json({ token, mensaje: 'Registro exitoso' });
-    } else {
+    } else if (tipoRegistro == 'google') {
+      // Encriptar la contraseña antes de guardarla en la base de datos
+      const contrasenaEncriptada = await bcrypt.hash(contrasena, 10);
+
+      const nuevoUsuario = await Usuario.create({
+        CorreoElectronico: correo,
+        Contrasena: contrasenaEncriptada,
+        NombreCompleto: nombreCompleto,
+        FechaNacimiento: fechaNacimiento,
+        Genero: genero,
+        Telefono: telefono,
+        NombreUsuario: nombreUsuario, 
+        GoogleUserID: googleUserId       
+        // Otros campos de información de usuario según la base de datos
+      });
+
+      const token = jwt.sign(
+        { id: nuevoUsuario.id, correoElectronico: nuevoUsuario.CorreoElectronico },
+        process.env.SECRET,
+        { expiresIn: '1h' }
+      );
+
+      res.status(201).json({ token, mensaje: 'Registro de google exitoso' });
+    }
+    else {
       res.status(400).json({ mensaje: 'Tipo de registro no válido' });
     }
   } catch (error) {
