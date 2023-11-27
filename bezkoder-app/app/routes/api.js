@@ -18,6 +18,7 @@ router.post('/documentos', documentosController.crearDocumento);
 router.get('/obtener_documentos', documentosController.obtenerDocumentos);
 router.post('/encriptar', documentosController.encriptarDocumento);
 router.post('/desencriptar', documentosController.desencriptarDocumento);
+router.post('/eliminar_documento', documentosController.eliminarDocumento);
 
 // Rutas para Registros de Acceso
 router.post('/registros-acceso', registrosAccesoController.registrarAcceso);

@@ -28,6 +28,8 @@
     "passport": "^0.6.0",
     "passport-google-oauth": "^2.0.0",
     "passport-google-oauth20": "^2.0.0",
-    "sequelize": "^5.21.2"
+    "selenium-webdriver": "^4.15.0",
+    "sequelize": "^5.21.2",
+    "webdriver-manager": "^12.1.9"
   }
 }

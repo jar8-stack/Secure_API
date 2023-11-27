@@ -10,10 +10,10 @@ const upload = multer({ storage });
 exports.crearDocumento = async (req, res) => {
   try {
     // Obtener el ID del usuario desde el token JWT
-    const token = req.headers.authorization;        
+    const token = req.headers.authorization;
     const decoded = jwt.verify(token, process.env.SECRET);// Asegúrate de tener la clave secreta correcta        
     const usuarioId = decoded.id;
-    console.log("Token decodificado: "+usuarioId)
+    console.log("Token decodificado: " + usuarioId)
 
     // Crear el nuevo documento asociado al usuario
     const nuevoDocumento = await Documento.create({
@@ -36,19 +36,19 @@ exports.obtenerDocumentos = async (req, res) => {
 
     if (!token) {
       return res.status(401).json({ mensaje: 'No se proporcionó un token JWT' });
-    }    
-    
-    try {      
+    }
+
+    try {
 
       // Verifica y decodifica el token JWT
-    const decoded = jwt.verify(token, process.env.SECRET); // Reemplaza 'secreto' con tu clave secreta JWT      
-    console.log(decoded)
+      const decoded = jwt.verify(token, process.env.SECRET); // Reemplaza 'secreto' con tu clave secreta JWT      
+      console.log(decoded)
 
-    // Ahora, puedes usar "decoded" para obtener información del usuario, como su ID o correo electrónico
-    const PropietarioID = decoded.id; // Asume que el token JWT contiene el ID del usuario+
+      // Ahora, puedes usar "decoded" para obtener información del usuario, como su ID o correo electrónico
+      const PropietarioID = decoded.id; // Asume que el token JWT contiene el ID del usuario+
 
       // Recupera los documentos del usuario con el ID obtenido del JWT
-      const documentos = await Documento.findAll({ where: { PropietarioID: PropietarioID } });      
+      const documentos = await Documento.findAll({ where: { PropietarioID: PropietarioID } });
 
       if (documentos.length === 0) {
         return res.status(404).json({ mensaje: 'No se encontraron documentos para este usuario' });
@@ -74,7 +74,7 @@ exports.encriptarDocumento = async (req, res) => {
     }
 
     // Obtener el ID del usuario desde el token JWT
-    const token = req.headers.authorization;        
+    const token = req.headers.authorization;
     const decoded = jwt.verify(token, process.env.SECRET);// Asegúrate de tener la clave secreta correcta        
     const PropietarioID = decoded.id;
 
@@ -82,7 +82,7 @@ exports.encriptarDocumento = async (req, res) => {
     const cipher = crypto.createCipher('aes-256-cbc', claveDeEncriptacion);
     let encryptedData = cipher.update(documento, 'utf8', 'hex');
     encryptedData += cipher.final('hex');
-    
+
 
     // Guarda el archivo en la base de datos
     const nuevoDocumento = await Documento.create({
@@ -129,5 +129,31 @@ exports.desencriptarDocumento = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al desencriptar el documento' });
+  }
+};
+
+
+exports.eliminarDocumento = async (req, res) => {
+  const documentoId = req.body.documentoId;
+  console.log(documentoId)
+
+  try {
+    // Verificar si el documento existe
+    const documento = await Documento.findByPk(documentoId);
+    if (!documento) {
+      return res.status(404).json({ error: 'Documento no encontrado' });
+    }
+
+    // Eliminar el documento
+    await Documento.destroy({
+      where: {
+        id: documentoId,
+      },
+    });
+
+    res.status(200).json({ message: 'Documento eliminado exitosamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al eliminar documento' });
   }
 };
