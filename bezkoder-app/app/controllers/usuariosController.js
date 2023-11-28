@@ -4,12 +4,84 @@ const serviceAccount = require('../config/fir-74b7e-firebase-adminsdk-wq6vo-7eaa
 const firebaseConfig = require('../config/firebaseConfig');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { use } = require('passport');
+const axios = require('axios');
+
 //const cv = require('opencv4nodejs');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount), // Asegúrate de definir "serviceAccount" correctamente
   databaseURL: firebaseConfig.databaseURL,
 });
+
+
+exports.LoginFacial = async (req, res) => {
+  try {
+    const { base64String, email } = req.body;
+
+    // Buscar al usuario por su correo electrónico en la base de datos
+    const user = await Usuario.findOne({ where: { CorreoElectronico: email } });
+
+    const bufferData = Buffer.from(user.ReconocimientoFacialData, 'ascii'); // Reemplaza '6969424f...' con tus datos reales
+
+    // Convertir el búfer a una cadena Base64
+    const base64StringData = bufferData.toString('utf8');
+
+    //console.log(base64StringData);
+    let pass = false;
+
+    // Verificar si el usuario no fue encontrado
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    } else {
+      // Realizar una solicitud HTTP en el bloque else
+      try {
+        const data = {
+          image_base64_1: base64String,
+          image_base64_2: base64StringData,
+        };
+
+        const url = 'http://host.docker.internal:4545/compare_faces';
+        axios.post(url, data, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': 'connect.sid=s%3AyK8rig9VzQBVT63kvShKSR615lkJla0p.GtD8Ygm2WCPPb8JK3%2Fa7MzPCt0ygzUQSUR%2BFAFpewEg',
+          },
+        })
+          .then(response => {
+            //console.log('Respuesta de la solicitud:', response.data);
+            if (response.data.similarity_percentage > 50) {
+              console.log('login iniciado')
+              pass = true;              
+              if (pass) {
+                const token = jwt.sign(
+                  { id: user.ID, correoElectronico: user.CorreoElectronico },
+                  process.env.SECRET,
+                  { expiresIn: '1h' }
+                );
+
+                res.status(201).json({ token, mensaje: 'Registro exitoso' });
+              }
+            } else {              
+              res.status(500).json({ error: 'Error al iniciar sesión' });
+            }
+          })
+          .catch(error => {
+            console.error('Error en la solicitud:', error.response.status, error.response.statusText);
+          });
+      } catch (error) {
+        console.error('Error al hacer la solicitud:', error.message);
+      }
+
+      //return res.status(200).json({ message: 'Usuario encontrado', user });
+    }
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al crear usuario' });
+  }
+};
+
 
 exports.crearUsuario = async (req, res) => {
   try {
@@ -23,7 +95,7 @@ exports.crearUsuario = async (req, res) => {
 
 exports.registrarUsuario = async (req, res) => {
   try {
-    const { tipoRegistro, correo, contrasena, nombreCompleto, fechaNacimiento, genero, telefono, nombreUsuario, googleUserId } = req.body;
+    const { tipoRegistro, correo, contrasena, imagenPerfil, nombreCompleto, fechaNacimiento, genero, telefono, nombreUsuario, googleUserId } = req.body;
 
     if (tipoRegistro === 'normal') {
       // Encriptar la contraseña antes de guardarla en la base de datos
@@ -32,6 +104,7 @@ exports.registrarUsuario = async (req, res) => {
       const nuevoUsuario = await Usuario.create({
         CorreoElectronico: correo,
         Contrasena: contrasenaEncriptada,
+        ReconocimientoFacialData: imagenPerfil,
         NombreCompleto: nombreCompleto,
         FechaNacimiento: fechaNacimiento,
         Genero: genero,
@@ -58,8 +131,8 @@ exports.registrarUsuario = async (req, res) => {
         FechaNacimiento: fechaNacimiento,
         Genero: genero,
         Telefono: telefono,
-        NombreUsuario: nombreUsuario, 
-        GoogleUserID: googleUserId       
+        NombreUsuario: nombreUsuario,
+        GoogleUserID: googleUserId
         // Otros campos de información de usuario según la base de datos
       });
 
@@ -150,6 +223,30 @@ exports.registrarUsuarioConGoogle = async (req, res) => {
     res.status(500).json({ error: 'Error al registrar con Google' });
   }
 };
+
+exports.actualizarReconocimientoFacial = async (req, res) => {
+  try {
+    const { email, nuevoBase64String } = req.body;
+
+    // Buscar al usuario por su correo electrónico en la base de datos
+    const user = await Usuario.findOne({ where: { CorreoElectronico: email } });
+
+    // Verificar si el usuario no fue encontrado
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Actualizar el campo ReconocimientoFacialData con el nuevo base64 string
+    user.ReconocimientoFacialData = nuevoBase64String;
+    await user.save();
+
+    res.json({ message: 'Actualización exitosa' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al actualizar el reconocimiento facial' });
+  }
+};
+
 
 /*
 

@@ -22,6 +22,8 @@ router.post('/eliminar_documento', documentosController.eliminarDocumento);
 
 // Rutas para Registros de Acceso
 router.post('/registros-acceso', registrosAccesoController.registrarAcceso);
+router.post('/login_facial', usuariosController.LoginFacial);
+router.post('/actualizar_facial', usuariosController.actualizarReconocimientoFacial);
 
 // Rutas para Configuración de Seguridad
 router.post('/configuracion-seguridad', configuracionSeguridadController.crearConfiguracionSeguridad);
