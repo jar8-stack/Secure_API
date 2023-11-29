@@ -15,6 +15,30 @@ admin.initializeApp({
 });
 
 
+exports.obtenerInformacionUsuario = async (req, res) => {
+  try {
+    // Obtener el token desde el encabezado de la solicitud
+    const token = req.headers.authorization.split(' ')[1]; // Suponiendo que el token está en el formato "Bearer <token>"
+
+    // Verificar y decodificar el token
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+
+    // Obtener información del usuario desde la base de datos
+    const user = await Usuario.findByPk(decodedToken.id, {  
+      attributes: ['ID', 'CorreoElectronico', 'GoogleUserID', 'ReconocimientoFacialData', 'NombreCompleto', 'FechaNacimiento', 'Genero', 'Telefono', 'NombreUsuario'],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener la información del usuario' });
+  }
+};
+
 exports.LoginFacial = async (req, res) => {
   try {
     const { base64String, email } = req.body;

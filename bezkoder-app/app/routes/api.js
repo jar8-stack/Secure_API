@@ -11,6 +11,7 @@ const metodosCifradoController = require('../controllers/metodosCifradoControlle
 router.post('/usuarios', usuariosController.registrarUsuario);
 router.post('/login', usuariosController.iniciarSesion);
 router.post('/google', usuariosController.registrarUsuarioConGoogle);
+router.post('/find_user', usuariosController.obtenerInformacionUsuario);
 /// router.post('/loginFacial', usuariosController.registrarUsuarioConGoogle);
 
 // Rutas para Documentos
