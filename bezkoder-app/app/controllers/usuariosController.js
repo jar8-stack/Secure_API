@@ -74,15 +74,14 @@ exports.LoginFacial = async (req, res) => {
         })
           .then(response => {
             //console.log('Respuesta de la solicitud:', response.data);
-            if (response.data.similarity_percentage > 50) {
-              console.log('login iniciado')
+            if (response.data.similarity_percentage > 50) {              
               pass = true;              
-              if (pass) {
+              if (pass) {                
                 const token = jwt.sign(
-                  { id: user.ID, correoElectronico: user.CorreoElectronico },
+                  { id: user.id, correoElectronico: user.CorreoElectronico },
                   process.env.SECRET,
                   { expiresIn: '1h' }
-                );
+                );                
 
                 res.status(201).json({ token, mensaje: 'Registro exitoso' });
               }
